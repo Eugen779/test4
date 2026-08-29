@@ -37,34 +37,28 @@ export default function CheckoutPage() {
 
     const supabase = createClient();
     const orderNumber = generateOrderNumber();
+    const orderId = crypto.randomUUID();
 
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_name: name,
-        customer_phone: phone,
-        customer_email: email || null,
-        customer_address: address,
-        notes: notes || null,
-        total: grandTotal,
-        status: "noua",
-      })
-      .select()
-      .single();
+    const { error: orderError } = await supabase.from("orders").insert({
+      id: orderId,
+      order_number: orderNumber,
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email || null,
+      customer_address: address,
+      notes: notes || null,
+      total: grandTotal,
+      status: "noua",
+    });
 
-    if (orderError || !order) {
-      setError(
-        `Eroare: ${orderError?.message ?? "necunoscută"} | cod: ${orderError?.code ?? "-"} | detalii: ${
-          orderError?.details ?? "-"
-        } | hint: ${orderError?.hint ?? "-"}`
-      );
+    if (orderError) {
+      setError(`Comanda nu a putut fi trimisă: ${orderError.message}`);
       setSubmitting(false);
       return;
     }
 
     const orderItems = items.map((item) => ({
-      order_id: order.id,
+      order_id: orderId,
       product_id: item.id,
       product_name: item.name,
       unit_price: item.price,
