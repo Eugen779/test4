@@ -54,7 +54,7 @@ export default function CheckoutPage() {
       .single();
 
     if (orderError || !order) {
-      setError("Comanda nu a putut fi trimisă. Încearcă din nou.");
+      setError(`Comanda nu a putut fi trimisÄƒ: ${orderError?.message ?? "eroare necunoscutÄƒ"}`);
       setSubmitting(false);
       return;
     }
@@ -72,7 +72,7 @@ export default function CheckoutPage() {
 
     setSubmitting(false);
     if (itemsError) {
-      setError("Comanda a fost creată, dar a apărut o eroare la produse. Te rugăm să ne contactezi.");
+      setError(`Comanda a fost creatÄƒ, dar a apÄƒrut o eroare la produse: ${itemsError.message}`);
       return;
     }
 
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
     return (
       <main className="min-h-screen bg-cream">
         <Header />
-        <p className="text-center text-navy/50 py-16">Coșul tău este gol.</p>
+        <p className="text-center text-navy/50 py-16">CoÈ™ul tÄƒu este gol.</p>
       </main>
     );
   }
@@ -93,7 +93,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-cream">
       <Header />
       <div className="px-4 pt-12 pb-5 max-w-md mx-auto">
-        <h1 className="font-display font-bold text-2xl text-navy mb-4">Finalizează comanda</h1>
+        <h1 className="font-display font-bold text-2xl text-navy mb-4">FinalizeazÄƒ comanda</h1>
 
         <div className="bg-white rounded-xl p-4 mb-5">
           {items.map((item) => (
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
             </div>
           ))}
           <div className="flex justify-between text-sm py-1 text-navy/80">
-            <span>Livrare (Chișinău și suburbii)</span>
+            <span>Livrare (ChiÈ™inÄƒu È™i suburbii)</span>
             <span className="font-semibold text-navy">{DELIVERY_FEE.toFixed(2)} lei</span>
           </div>
           <div className="flex justify-between mt-2 pt-2 border-t border-kraft font-display font-bold text-navy">
@@ -145,7 +145,7 @@ export default function CheckoutPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-navy mb-1">Email (opțional)</label>
+            <label className="block text-sm font-semibold text-navy mb-1">Email (opÈ›ional)</label>
             <input
               type="email"
               value={email}
@@ -154,7 +154,7 @@ export default function CheckoutPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-navy mb-1">Adresă de livrare</label>
+            <label className="block text-sm font-semibold text-navy mb-1">AdresÄƒ de livrare</label>
             <textarea
               required
               rows={2}
@@ -164,7 +164,7 @@ export default function CheckoutPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-navy mb-1">Observații (opțional)</label>
+            <label className="block text-sm font-semibold text-navy mb-1">ObservaÈ›ii (opÈ›ional)</label>
             <textarea
               rows={2}
               value={notes}
