@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-baloo: "Baloo 2";
+  --font-inter: "Inter";
+  --font-caveat: "Caveat";
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+/* Tranziții line, aplicate global, pentru un simț "smooth" peste tot —
+   butoane, linkuri, câmpuri de formular, carduri. */
+button,
+a,
+select {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
+    box-shadow 180ms ease, transform 150ms ease, opacity 180ms ease;
+}
+input,
+textarea {
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+button:active,
+a:active {
+  transform: scale(0.98);
+}
+
+/* Animație scurtă de apariție pentru conținutul paginilor din admin */
+@keyframes admin-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.admin-fade-in {
+  animation: admin-fade-in 220ms ease-out;
+}
+
+/* Focus vizibil pentru accesibilitate */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #C8342E;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Divider tip "sfoară" — refolosit între secțiuni pe homepage */
+.rope-divider {
+  height: 2px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #8B6F47 0 12px,
+    transparent 12px 20px
+  );
+  opacity: 0.5;
+}
