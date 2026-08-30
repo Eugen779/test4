@@ -46,7 +46,10 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="mt-2">
         <h3 className="font-display font-semibold text-sm text-navy line-clamp-1">{product.name}</h3>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="font-display font-bold text-coral">{product.price.toFixed(2)} lei</span>
+          <span className="font-display font-bold text-coral">
+            {product.price.toFixed(2)} lei
+            {product.unit === "kg" && <span className="text-xs font-body font-normal text-navy/50">/kg</span>}
+          </span>
           {product.compare_at_price && (
             <span className="text-xs text-navy/50 line-through">
               {product.compare_at_price.toFixed(2)} lei

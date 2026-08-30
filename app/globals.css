@@ -70,3 +70,12 @@ textarea:focus-visible {
   );
   opacity: 0.5;
 }
+
+/* Ascunde bara de scroll pe rândurile orizontale (categorii, carusel produse) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import AddToCartButton from "@/components/AddToCartButton";
+import ProductCarouselCard from "@/components/ProductCarouselCard";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 0;
@@ -29,6 +30,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     p.compare_at_price && p.compare_at_price > p.price
       ? Math.round(100 - (p.price / p.compare_at_price) * 100)
       : null;
+
+  // Produse recomandate — din aceeași categorie, excluzând produsul curent, max 5.
+  let related: Product[] = [];
+  if (p.category_id) {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("category_id", p.category_id)
+      .eq("is_active", true)
+      .neq("id", p.id)
+      .order("display_order")
+      .limit(5);
+    related = (data as Product[]) ?? [];
+  }
+  if (related.length === 0) {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .neq("id", p.id)
+      .order("display_order")
+      .limit(5);
+    related = (data as Product[]) ?? [];
+  }
 
   return (
     <main className="min-h-screen bg-cream">
@@ -69,6 +94,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <AddToCartButton product={p} />
       </div>
+
+      {related.length > 0 && (
+        <section className="px-4 pb-8 pt-2">
+          <h2 className="font-display font-bold text-lg text-navy mb-3">S-ar putea să-ți placă și</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            {related.map((rp) => (
+              <ProductCarouselCard key={rp.id} product={rp} />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

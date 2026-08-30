@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import HeroSlider from "@/components/HeroSlider";
+import SearchBar from "@/components/SearchBar";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductCard from "@/components/ProductCard";
 import type { Banner, Category, Product } from "@/lib/types";
@@ -28,24 +29,14 @@ export default async function HomePage() {
       <HeroSlider banners={(banners as Banner[]) ?? []} />
 
       {/* Căutare */}
-      <div className="px-4 py-4">
-        <div className="bg-white rounded-full shadow-md flex items-center gap-3 px-5 py-4">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8342E" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Caută pește, fructe de mare..."
-            className="bg-transparent flex-1 outline-none text-navy placeholder:text-navy/40 font-body"
-          />
-        </div>
+      <div className="px-4 pt-3 pb-2">
+        <SearchBar />
       </div>
 
       <CategoryGrid categories={(categories as Category[]) ?? []} />
 
       {featured && featured.length > 0 && (
-        <section className="px-4 py-6">
+        <section className="px-4 pt-2 pb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-bold text-xl text-navy">Raft Avantajos</h2>
             <a href="/produse" className="text-coral font-semibold text-sm">

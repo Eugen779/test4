@@ -4,7 +4,7 @@ import type { Category } from "@/lib/types";
 
 export default function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <section className="px-4 py-6">
+    <section className="px-4 pt-2 pb-3">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-xl text-navy tracking-wide">
           CATEGORII POPULARE
