@@ -26,6 +26,7 @@ export default function ProductForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(initial?.price?.toString() ?? "");
+  const [costPrice, setCostPrice] = useState(initial?.cost_price?.toString() ?? "");
   const [comparePrice, setComparePrice] = useState(initial?.compare_at_price?.toString() ?? "");
   const [stock, setStock] = useState(initial?.stock?.toString() ?? "0");
   const [unit, setUnit] = useState(initial?.unit ?? "buc");
@@ -48,6 +49,7 @@ export default function ProductForm({
       slug: slugify(name),
       description,
       price: parseFloat(price || "0"),
+      cost_price: costPrice ? parseFloat(costPrice) : null,
       compare_at_price: comparePrice ? parseFloat(comparePrice) : null,
       stock: parseInt(stock || "0", 10),
       unit,
@@ -124,6 +126,23 @@ export default function ProductForm({
             className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-navy mb-1">
+          Preț de achiziție (cost, doar pentru tine)
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          value={costPrice}
+          onChange={(e) => setCostPrice(e.target.value)}
+          placeholder="cât te costă pe tine produsul"
+          className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none"
+        />
+        <p className="text-xs text-navy/50 mt-1">
+          Folosit doar ca să calculăm profitul la fiecare comandă — nu se vede în magazin.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

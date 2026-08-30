@@ -24,8 +24,7 @@ input,
 textarea {
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
-button:active,
-a:active {
+button:active {
   transform: scale(0.98);
 }
 

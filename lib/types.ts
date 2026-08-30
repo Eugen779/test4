@@ -14,6 +14,7 @@ export type Product = {
   slug: string;
   description: string | null;
   price: number;
+  cost_price: number | null;
   compare_at_price: number | null;
   stock: number;
   unit: string;
