@@ -20,6 +20,7 @@ export type Product = {
   unit: string;
   size: string | null;
   weight_note: string | null;
+  weight_options: number[] | null;
   images: string[];
   is_active: boolean;
   is_featured: boolean;

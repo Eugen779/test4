@@ -32,6 +32,10 @@ export default function ProductForm({
   const [unit, setUnit] = useState(initial?.unit ?? "buc");
   const [size, setSize] = useState(initial?.size ?? "");
   const [weightNote, setWeightNote] = useState(initial?.weight_note ?? "");
+  const [weightOptions, setWeightOptions] = useState<string[]>(() => {
+    const opts = initial?.weight_options ?? [];
+    return [opts[0]?.toString() ?? "", opts[1]?.toString() ?? "", opts[2]?.toString() ?? ""];
+  });
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? categories[0]?.id ?? "");
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
@@ -55,6 +59,12 @@ export default function ProductForm({
       unit,
       size: size || null,
       weight_note: weightNote || null,
+      weight_options:
+        unit === "kg"
+          ? weightOptions
+              .map((w) => parseInt(w, 10))
+              .filter((w) => !isNaN(w) && w > 0)
+          : null,
       category_id: categoryId || null,
       images,
       is_active: isActive,
@@ -193,6 +203,34 @@ export default function ProductForm({
           />
         </div>
       </div>
+
+      {unit === "kg" && (
+        <div>
+          <label className="block text-sm font-semibold text-navy mb-1">
+            Opțiuni de greutate (grame) — clientul alege una la cumpărare
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {weightOptions.map((val, i) => (
+              <input
+                key={i}
+                type="number"
+                value={val}
+                onChange={(e) => {
+                  const next = [...weightOptions];
+                  next[i] = e.target.value;
+                  setWeightOptions(next);
+                }}
+                placeholder={["ex. 700", "ex. 1000", "ex. 2000"][i]}
+                className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none"
+              />
+            ))}
+          </div>
+          <p className="text-xs text-navy/50 mt-1">
+            Prețul de mai sus e per kilogram — pentru fiecare greutate, prețul se calculează automat
+            proporțional (ex. 700g = 70% din prețul per kg).
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-semibold text-navy mb-1">Categorie</label>
