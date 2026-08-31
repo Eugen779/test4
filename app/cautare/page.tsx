@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import ProductCard from "@/components/ProductCard";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/product-columns";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 0;
@@ -14,7 +15,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const { data: products } = query
     ? await supabase
         .from("products")
-        .select("*")
+        .select(PUBLIC_PRODUCT_COLUMNS)
         .eq("is_active", true)
         .ilike("name", `%${query}%`)
         .order("display_order")

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/product-columns";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
@@ -9,7 +10,7 @@ export default async function ProductsPage() {
   const supabase = await createClient();
   const { data: products } = await supabase
     .from("products")
-    .select("*")
+    .select(PUBLIC_PRODUCT_COLUMNS)
     .eq("is_active", true)
     .order("display_order");
 

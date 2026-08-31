@@ -4,6 +4,7 @@ import HeroSlider from "@/components/HeroSlider";
 import SearchBar from "@/components/SearchBar";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductCard from "@/components/ProductCard";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/product-columns";
 import type { Banner, Category, Product } from "@/lib/types";
 
 export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
@@ -16,7 +17,7 @@ export default async function HomePage() {
     supabase.from("categories").select("*").eq("is_active", true).order("display_order"),
     supabase
       .from("products")
-      .select("*")
+      .select(PUBLIC_PRODUCT_COLUMNS)
       .eq("is_active", true)
       .eq("is_featured", true)
       .order("display_order")

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductCarouselCard from "@/components/ProductCarouselCard";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/product-columns";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
@@ -10,11 +11,13 @@ export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data: product } = await supabase
-    .from("products")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+
+  // Produsul și un set de produse candidate pentru recomandări se cer
+  // simultan (nu unul după altul) — reduce timpul de așteptare la jumătate.
+  const [{ data: product }, { data: pool }] = await Promise.all([
+    supabase.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("slug", slug).single(),
+    supabase.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("is_active", true).order("display_order").limit(20),
+  ]);
 
   if (!product) {
     return (
@@ -31,28 +34,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ? Math.round(100 - (p.price / p.compare_at_price) * 100)
       : null;
 
-  // Produse recomandate — din aceeași categorie, excluzând produsul curent, max 5.
-  let related: Product[] = [];
-  if (p.category_id) {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .eq("category_id", p.category_id)
-      .eq("is_active", true)
-      .neq("id", p.id)
-      .order("display_order")
-      .limit(5);
-    related = (data as Product[]) ?? [];
-  }
-  if (related.length === 0) {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .eq("is_active", true)
-      .neq("id", p.id)
-      .order("display_order")
-      .limit(5);
-    related = (data as Product[]) ?? [];
+  // Produse recomandate — prioritizăm aceeași categorie, completăm cu altele dacă nu sunt destule.
+  const candidates = ((pool as Product[]) ?? []).filter((x) => x.id !== p.id);
+  let related = candidates.filter((x) => x.category_id === p.category_id).slice(0, 5);
+  if (related.length < 5) {
+    const usedIds = new Set(related.map((r) => r.id));
+    const fillers = candidates.filter((x) => !usedIds.has(x.id)).slice(0, 5 - related.length);
+    related = [...related, ...fillers];
   }
 
   return (
