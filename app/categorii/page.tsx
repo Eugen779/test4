@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import type { Category } from "@/lib/types";
 
-export const revalidate = 0;
+export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
 
 export default async function AllCategoriesPage() {
   const supabase = await createClient();

@@ -5,7 +5,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 import ProductCarouselCard from "@/components/ProductCarouselCard";
 import type { Product } from "@/lib/types";
 
-export const revalidate = 0;
+export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

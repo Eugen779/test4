@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import type { Product } from "@/lib/types";
 
-export const revalidate = 0;
+export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
 
 export default async function ProductsPage() {
   const supabase = await createClient();

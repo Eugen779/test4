@@ -6,7 +6,7 @@ import CategoryGrid from "@/components/CategoryGrid";
 import ProductCard from "@/components/ProductCard";
 import type { Banner, Category, Product } from "@/lib/types";
 
-export const revalidate = 0; // mereu date proaspete din admin
+export const revalidate = 30; // date reîmprospătate din admin cel mult la 30 secunde — mult mai rapid la navigare
 
 export default async function HomePage() {
   const supabase = await createClient();
