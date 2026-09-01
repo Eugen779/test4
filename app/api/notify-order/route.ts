@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     `👤 ${order.customer_name}\n` +
     `📞 ${order.customer_phone}\n` +
     `📍 ${order.customer_address}\n` +
+    (order.delivery_slot ? `🕐 ${order.delivery_slot}\n` : "") +
     `💰 ${Number(order.total).toFixed(2)} lei` +
     detailLink;
 

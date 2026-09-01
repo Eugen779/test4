@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, Tags, ShoppingCart, Image as ImageIcon, Settings } from "lucide-react";
+import { LayoutDashboard, Package, Tags, ShoppingCart, Image as ImageIcon, Settings, Truck } from "lucide-react";
 import LogoutButton from "@/components/admin/LogoutButton";
 
 const links = [
@@ -11,6 +11,7 @@ const links = [
   { href: "/admin/categorii", label: "Categorii", icon: Tags },
   { href: "/admin/comenzi", label: "Comenzi", icon: ShoppingCart },
   { href: "/admin/bannere", label: "Bannere & Homepage", icon: ImageIcon },
+  { href: "/admin/livrare", label: "Livrare", icon: Truck },
   { href: "/admin/setari", label: "Setări", icon: Settings },
 ];
 

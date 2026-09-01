@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { useCart } from "@/lib/cart-context";
 import { createClient } from "@/lib/supabase-client";
+import type { DeliverySlot } from "@/lib/types";
 
 function generateOrderNumber() {
   const now = new Date();
@@ -15,16 +16,53 @@ function generateOrderNumber() {
 }
 
 const DELIVERY_FEE = 40;
+const DAY_NAMES = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+
+type SlotOption = { key: string; label: string };
+
+// Calculează primele opțiuni de livrare disponibile, pornind de la ora curentă —
+// sare peste intervalele din ziua de azi care deja au trecut.
+function computeSlotOptions(slots: DeliverySlot[], now: Date): SlotOption[] {
+  const options: SlotOption[] = [];
+  for (let offset = 0; offset < 8 && options.length < 8; offset++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + offset);
+    const dow = date.getDay();
+    const daySlots = slots
+      .filter((s) => s.day_of_week === dow)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+    for (const slot of daySlots) {
+      const [eh, em] = slot.end_time.split(":").map(Number);
+      const slotEnd = new Date(date);
+      slotEnd.setHours(eh, em, 0, 0);
+      if (offset === 0 && slotEnd <= now) continue; // interval deja trecut azi
+
+      const dayLabel = offset === 0 ? "Azi" : offset === 1 ? "Mâine" : DAY_NAMES[dow];
+      const dateLabel = `${date.getDate().toString().padStart(2, "0")}.${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}`;
+      const label = `${dayLabel}, ${dateLabel} · ${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`;
+      options.push({ key: `${offset}-${slot.id}`, label });
+    }
+  }
+  return options;
+}
 
 export default function CheckoutClient({
   minOrderEnabled,
   minOrderAmount,
+  deliverySlots,
 }: {
   minOrderEnabled: boolean;
   minOrderAmount: number;
+  deliverySlots: DeliverySlot[];
 }) {
   const { items, total, clear } = useCart();
   const router = useRouter();
+
+  const slotOptions = useMemo(() => computeSlotOptions(deliverySlots, new Date()), [deliverySlots]);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(slotOptions[0]?.label ?? null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -57,6 +95,7 @@ export default function CheckoutClient({
       notes: notes || null,
       total: grandTotal,
       status: "noua",
+      delivery_slot: selectedSlot,
     });
 
     if (orderError) {
@@ -146,6 +185,28 @@ export default function CheckoutClient({
             Plata se face <span className="font-semibold">doar cash, la livrare</span> (ramburs).
           </p>
         </div>
+
+        {slotOptions.length > 0 && (
+          <div className="mb-5">
+            <p className="text-sm font-semibold text-navy mb-2">Când vrei să primești comanda?</p>
+            <div className="space-y-2">
+              {slotOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setSelectedSlot(opt.label)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border font-medium text-sm ${
+                    selectedSlot === opt.label
+                      ? "bg-coral text-cream border-coral"
+                      : "bg-white border-kraftDark text-navy hover:bg-kraft/30"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

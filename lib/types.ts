@@ -52,6 +52,15 @@ export type Settings = {
   min_order_amount: number;
 };
 
+export type DeliverySlot = {
+  id: string;
+  day_of_week: number; // 0=Duminică ... 6=Sâmbătă
+  start_time: string; // "09:00:00"
+  end_time: string;
+  is_active: boolean;
+  display_order: number;
+};
+
 export type OrderStatus = "noua" | "confirmata" | "in_livrare" | "livrata" | "anulata";
 
 export type Order = {
@@ -64,6 +73,7 @@ export type Order = {
   status: OrderStatus;
   total: number;
   notes: string | null;
+  delivery_slot: string | null;
   created_at: string;
 };
 
