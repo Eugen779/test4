@@ -48,6 +48,8 @@ export type Settings = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  min_order_enabled: boolean;
+  min_order_amount: number;
 };
 
 export type OrderStatus = "noua" | "confirmata" | "in_livrare" | "livrata" | "anulata";
