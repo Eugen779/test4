@@ -106,7 +106,7 @@ export default function CheckoutClient({
 
     const orderItems = items.map((item) => ({
       order_id: orderId,
-      product_id: item.id,
+      product_id: item.productId,
       product_name: item.name,
       unit_price: item.price,
       quantity: item.quantity,

@@ -31,6 +31,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
     addItem(
       {
         id: hasWeightOptions && selectedWeight ? `${product.id}-${selectedWeight}` : product.id,
+        productId: product.id,
         name: effectiveName,
         price: effectivePrice,
         image: product.images[0] ?? null,

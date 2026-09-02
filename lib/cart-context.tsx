@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 export type CartItem = {
-  id: string; // product id
+  id: string; // cheie unică în coș (poate include varianta de greutate, ex. "abc-700")
+  productId: string; // ID-ul real al produsului din baza de date (UUID curat, pentru comenzi)
   name: string;
   price: number;
   image: string | null;
