@@ -1,29 +1,62 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
-import type { Order } from "@/lib/types";
+import type { Order, OrderStatus } from "@/lib/types";
 
 export const revalidate = 0;
 
-const statusLabels: Record<string, string> = {
-  noua: "Nouă",
-  confirmata: "Confirmată",
-  in_livrare: "În livrare",
-  livrata: "Livrată",
-  anulata: "Anulată",
+const statusStyles: Record<OrderStatus, string> = {
+  noua: "border-l-4 border-l-navy/20 bg-white",
+  confirmata: "border-l-4 border-l-blue-400 bg-blue-50/50",
+  in_livrare: "border-l-4 border-l-amber-400 bg-amber-50/50",
+  livrata: "border-l-4 border-l-seafoam bg-seafoam/10",
+  anulata: "border-l-4 border-l-coral bg-coral/5 opacity-70",
 };
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const { filter } = await searchParams;
+  const activeFilter = filter === "azi" ? "azi" : "toate";
+
   const supabase = await createClient();
   const { data: orders } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
 
+  const allOrders = (orders as Order[]) ?? [];
+  const todayStr = new Date().toDateString();
+  const visibleOrders =
+    activeFilter === "azi"
+      ? allOrders.filter((o) => new Date(o.created_at).toDateString() === todayStr)
+      : allOrders;
+
   return (
     <div>
-      <h1 className="font-display font-bold text-2xl text-navy mb-5">Comenzi</h1>
+      <h1 className="font-display font-bold text-2xl text-navy mb-4">Comenzi</h1>
 
-      <div className="bg-white rounded-2xl overflow-hidden divide-y divide-kraft shadow-sm">
-        {((orders as Order[]) ?? []).map((o) => (
-          <div key={o.id} className="p-4 hover:bg-kraft/10 transition-colors">
+      <div className="flex gap-2 mb-5">
+        <Link
+          href="/admin/comenzi"
+          className={`text-sm font-semibold px-4 py-2 rounded-full ${
+            activeFilter === "toate" ? "bg-coral text-cream" : "bg-white text-navy border border-kraftDark"
+          }`}
+        >
+          Toate ({allOrders.length})
+        </Link>
+        <Link
+          href="/admin/comenzi?filter=azi"
+          className={`text-sm font-semibold px-4 py-2 rounded-full ${
+            activeFilter === "azi" ? "bg-coral text-cream" : "bg-white text-navy border border-kraftDark"
+          }`}
+        >
+          Azi ({allOrders.filter((o) => new Date(o.created_at).toDateString() === todayStr).length})
+        </Link>
+      </div>
+
+      <div className="rounded-2xl overflow-hidden divide-y divide-kraft shadow-sm">
+        {visibleOrders.map((o) => (
+          <div key={o.id} className={`p-4 hover:brightness-95 transition-all ${statusStyles[o.status]}`}>
             <div className="flex items-center justify-between mb-1">
               <p className="font-semibold text-navy">#{o.order_number}</p>
               <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
@@ -38,8 +71,8 @@ export default async function AdminOrdersPage() {
             </div>
           </div>
         ))}
-        {(!orders || orders.length === 0) && (
-          <p className="p-6 text-center text-navy/50">Nicio comandă încă.</p>
+        {visibleOrders.length === 0 && (
+          <p className="p-6 text-center text-navy/50 bg-white">Nicio comandă {activeFilter === "azi" ? "azi" : "încă"}.</p>
         )}
       </div>
     </div>

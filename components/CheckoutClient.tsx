@@ -18,7 +18,7 @@ function generateOrderNumber() {
 const DELIVERY_FEE = 40;
 const DAY_NAMES = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
 
-type SlotOption = { key: string; label: string };
+type SlotOption = { key: string; dayLabel: string; timeLabel: string; label: string };
 
 // Calculează primele opțiuni de livrare disponibile, pornind de la ora curentă —
 // sare peste intervalele din ziua de azi care deja au trecut.
@@ -38,12 +38,13 @@ function computeSlotOptions(slots: DeliverySlot[], now: Date): SlotOption[] {
       slotEnd.setHours(eh, em, 0, 0);
       if (offset === 0 && slotEnd <= now) continue; // interval deja trecut azi
 
-      const dayLabel = offset === 0 ? "Azi" : offset === 1 ? "Mâine" : DAY_NAMES[dow];
+      const dayName = offset === 0 ? "Azi" : offset === 1 ? "Mâine" : DAY_NAMES[dow];
       const dateLabel = `${date.getDate().toString().padStart(2, "0")}.${(date.getMonth() + 1)
         .toString()
         .padStart(2, "0")}`;
-      const label = `${dayLabel}, ${dateLabel} · ${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`;
-      options.push({ key: `${offset}-${slot.id}`, label });
+      const dayLabel = `${dayName}, ${dateLabel}`;
+      const timeLabel = `${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`;
+      options.push({ key: `${offset}-${slot.id}`, dayLabel, timeLabel, label: `${dayLabel} · ${timeLabel}` });
     }
   }
   return options;
@@ -189,19 +190,22 @@ export default function CheckoutClient({
         {slotOptions.length > 0 && (
           <div className="mb-5">
             <p className="text-sm font-semibold text-navy mb-2">Când vrei să primești comanda?</p>
-            <div className="space-y-2">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
               {slotOptions.map((opt) => (
                 <button
                   key={opt.key}
                   type="button"
                   onClick={() => setSelectedSlot(opt.label)}
-                  className={`w-full text-left px-4 py-3 rounded-lg border font-medium text-sm ${
+                  className={`shrink-0 w-36 snap-start text-center px-3 py-4 rounded-xl border ${
                     selectedSlot === opt.label
                       ? "bg-coral text-cream border-coral"
-                      : "bg-white border-kraftDark text-navy hover:bg-kraft/30"
+                      : "bg-white border-kraftDark text-navy"
                   }`}
                 >
-                  {opt.label}
+                  <span className="block font-display font-bold text-sm">{opt.dayLabel}</span>
+                  <span className={`block text-sm mt-1 ${selectedSlot === opt.label ? "text-cream/90" : "text-navy/60"}`}>
+                    {opt.timeLabel}
+                  </span>
                 </button>
               ))}
             </div>
