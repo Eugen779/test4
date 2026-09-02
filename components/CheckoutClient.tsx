@@ -190,7 +190,8 @@ export default function CheckoutClient({
         {slotOptions.length > 0 && (
           <div className="mb-5">
             <p className="text-sm font-semibold text-navy mb-2">Când vrei să primești comanda?</p>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 pl-6 pr-4 scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-3 overflow-x-auto pb-2 pr-4 scrollbar-hide snap-x snap-mandatory">
+              <div className="shrink-0 w-2" aria-hidden="true" />
               {slotOptions.map((opt) => (
                 <button
                   key={opt.key}
