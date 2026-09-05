@@ -1,38 +1,66 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Leaflet caută implicit imaginile de pin într-un loc care nu există în
-// build-ul Next.js — le luăm direct de pe CDN, ca să nu apară pini rupți.
-const markerIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+// Iconițe simple, cu emoji — mai plăcute vizual decât pinii impliciți Leaflet
+// și nu au nevoie de imagini externe care se pot rupe la build.
+const driverIcon = L.divIcon({
+  html: '<div style="font-size:26px;line-height:1">🚗</div>',
+  className: "",
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+});
+const destinationIcon = L.divIcon({
+  html: '<div style="font-size:26px;line-height:1">📍</div>',
+  className: "",
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
 });
 
-function Recenter({ lat, lng }: { lat: number; lng: number }) {
+type LatLng = { lat: number; lng: number };
+
+function FitToMarkers({ driver, destination }: { driver: LatLng; destination?: LatLng }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng]);
-  }, [lat, lng, map]);
+    if (destination) {
+      map.fitBounds(
+        [
+          [driver.lat, driver.lng],
+          [destination.lat, destination.lng],
+        ],
+        { padding: [40, 40] }
+      );
+    } else {
+      map.setView([driver.lat, driver.lng], 15);
+    }
+  }, [driver.lat, driver.lng, destination?.lat, destination?.lng, map]);
   return null;
 }
 
-export default function DeliveryMap({ lat, lng }: { lat: number; lng: number }) {
+export default function DeliveryMap({
+  driver,
+  destination,
+  route,
+}: {
+  driver: LatLng;
+  destination?: LatLng;
+  route?: [number, number][];
+}) {
   return (
-    <div className="w-full h-64 rounded-xl overflow-hidden border border-kraftDark/30">
-      <MapContainer center={[lat, lng]} zoom={15} scrollWheelZoom={false} style={{ width: "100%", height: "100%" }}>
+    <div className="w-full h-72 rounded-2xl overflow-hidden border border-kraftDark/30 shadow-sm">
+      <MapContainer center={[driver.lat, driver.lng]} zoom={15} scrollWheelZoom={false} style={{ width: "100%", height: "100%" }}>
+        {/* Stil de hartă simplu și curat (CartoDB Positron) — fără aglomerare vizuală */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap &copy; CARTO'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-        <Marker position={[lat, lng]} icon={markerIcon} />
-        <Recenter lat={lat} lng={lng} />
+        {route && route.length > 1 && <Polyline positions={route} pathOptions={{ color: "#C8342E", weight: 4, opacity: 0.85 }} />}
+        <Marker position={[driver.lat, driver.lng]} icon={driverIcon} />
+        {destination && <Marker position={[destination.lat, destination.lng]} icon={destinationIcon} />}
+        <FitToMarkers driver={driver} destination={destination} />
       </MapContainer>
     </div>
   );

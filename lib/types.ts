@@ -77,6 +77,8 @@ export type Order = {
   current_lat: number | null;
   current_lng: number | null;
   location_updated_at: string | null;
+  delivery_lat: number | null;
+  delivery_lng: number | null;
   created_at: string;
 };
 

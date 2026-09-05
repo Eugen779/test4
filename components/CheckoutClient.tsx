@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useCart } from "@/lib/cart-context";
 import { createClient } from "@/lib/supabase-client";
 import type { DeliverySlot } from "@/lib/types";
@@ -69,6 +70,8 @@ export default function CheckoutClient({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+  const [addressLat, setAddressLat] = useState<number | null>(null);
+  const [addressLng, setAddressLng] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +82,10 @@ export default function CheckoutClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (items.length === 0 || belowMinimum) return;
+    if (addressLat === null || addressLng === null) {
+      setError("Alege adresa exactă din lista de sugestii, ca să confirmăm că livrăm în zona ta.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -93,6 +100,8 @@ export default function CheckoutClient({
       customer_phone: phone,
       customer_email: email || null,
       customer_address: address,
+      delivery_lat: addressLat,
+      delivery_lng: addressLng,
       notes: notes || null,
       total: grandTotal,
       status: "noua",
@@ -249,12 +258,19 @@ export default function CheckoutClient({
           </div>
           <div>
             <label className="block text-sm font-semibold text-navy mb-1">Adresă de livrare</label>
-            <textarea
-              required
-              rows={2}
+            <AddressAutocomplete
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full border border-kraftDark rounded-lg px-3 py-2.5 bg-white"
+              confirmed={addressLat !== null}
+              onChange={(v) => {
+                setAddress(v);
+                setAddressLat(null);
+                setAddressLng(null);
+              }}
+              onSelect={(s) => {
+                setAddress(s.display_name);
+                setAddressLat(s.lat);
+                setAddressLng(s.lon);
+              }}
             />
           </div>
           <div>

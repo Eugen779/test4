@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
@@ -17,6 +17,8 @@ type OrderData = {
   current_lat: number | null;
   current_lng: number | null;
   location_updated_at: string | null;
+  delivery_lat: number | null;
+  delivery_lng: number | null;
   created_at: string;
 };
 
@@ -40,18 +42,19 @@ const statusColors: Record<string, string> = {
 
 export default function MyOrderPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [route, setRoute] = useState<[number, number][] | null>(null);
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [etaKm, setEtaKm] = useState<number | null>(null);
+  const lastRouteKey = useRef<string>("");
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ocean-produs-last-order");
       if (raw) {
-        const parsed = JSON.parse(raw);
-        setOrderId(parsed.id);
-        setOrderNumber(parsed.order_number);
+        setOrderId(JSON.parse(raw).id);
       } else {
         setNotFound(true);
       }
@@ -62,8 +65,8 @@ export default function MyOrderPage() {
 
   useEffect(() => {
     if (!orderId) return;
-
     let cancelled = false;
+
     async function fetchOrder() {
       try {
         const res = await fetch(`/api/my-order?id=${orderId}`);
@@ -72,9 +75,29 @@ export default function MyOrderPage() {
           return;
         }
         const data = await res.json();
-        if (!cancelled) {
-          setOrder(data.order);
-          setItems(data.items);
+        if (cancelled) return;
+        setOrder(data.order);
+        setItems(data.items);
+
+        // Recalculăm traseul doar dacă poziția livratorului chiar s-a schimbat —
+        // nu de fiecare dată, ca să nu suprasolicităm serviciul de rutare.
+        const o: OrderData = data.order;
+        if (o.status === "in_livrare" && o.current_lat != null && o.current_lng != null && o.delivery_lat != null && o.delivery_lng != null) {
+          const key = `${o.current_lat.toFixed(4)},${o.current_lng.toFixed(4)}`;
+          if (key !== lastRouteKey.current) {
+            lastRouteKey.current = key;
+            const routeRes = await fetch(
+              `/api/route-eta?oLat=${o.current_lat}&oLng=${o.current_lng}&dLat=${o.delivery_lat}&dLng=${o.delivery_lng}`
+            );
+            if (routeRes.ok) {
+              const routeData = await routeRes.json();
+              if (!cancelled && routeData.coordinates) {
+                setRoute(routeData.coordinates);
+                setEtaMinutes(Math.round(routeData.durationSeconds / 60));
+                setEtaKm(Math.round((routeData.distanceMeters / 1000) * 10) / 10);
+              }
+            }
+          }
         }
       } catch {
         // conexiune momentan indisponibilă — încercăm din nou la următoarea rundă
@@ -82,8 +105,6 @@ export default function MyOrderPage() {
     }
 
     fetchOrder();
-    // La fiecare 5 secunde — suficient de des cât să simtă "live" harta în timpul livrării,
-    // fără să încărcăm inutil serverul restul timpului.
     const interval = setInterval(fetchOrder, 5000);
     return () => {
       cancelled = true;
@@ -129,8 +150,23 @@ export default function MyOrderPage() {
 
         {showLiveMap && (
           <div className="mb-5">
-            <p className="text-sm font-semibold text-navy mb-2">📍 Livrarea e pe drum</p>
-            <DeliveryMap lat={order.current_lat!} lng={order.current_lng!} />
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-navy">📍 Livrarea e pe drum</p>
+              {etaMinutes !== null && (
+                <p className="text-sm font-bold text-coral">
+                  ~{etaMinutes} min {etaKm !== null && <span className="text-navy/50 font-normal">· {etaKm} km</span>}
+                </p>
+              )}
+            </div>
+            <DeliveryMap
+              driver={{ lat: order.current_lat!, lng: order.current_lng! }}
+              destination={
+                order.delivery_lat != null && order.delivery_lng != null
+                  ? { lat: order.delivery_lat, lng: order.delivery_lng }
+                  : undefined
+              }
+              route={route ?? undefined}
+            />
             <p className="text-xs text-navy/40 mt-1">Locația se actualizează automat.</p>
           </div>
         )}
