@@ -4,8 +4,9 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import AddressMapPicker from "@/components/AddressMapPicker";
 import { useCart } from "@/lib/cart-context";
+import { addOrderToHistory } from "@/lib/order-history";
 import { createClient } from "@/lib/supabase-client";
 import type { DeliverySlot } from "@/lib/types";
 
@@ -132,11 +133,7 @@ export default function CheckoutClient({
     }
 
     clear();
-    try {
-      localStorage.setItem("ocean-produs-last-order", JSON.stringify({ id: orderId, order_number: orderNumber }));
-    } catch {
-      // localStorage indisponibil — clientul poate oricând urmări comanda cu numărul primit.
-    }
+    addOrderToHistory({ id: orderId, order_number: orderNumber });
     router.push(`/checkout/confirmare?numar=${orderNumber}`);
   }
 
@@ -258,18 +255,17 @@ export default function CheckoutClient({
           </div>
           <div>
             <label className="block text-sm font-semibold text-navy mb-1">Adresă de livrare</label>
-            <AddressAutocomplete
-              value={address}
+            <AddressMapPicker
+              address={address}
               confirmed={addressLat !== null}
-              onChange={(v) => {
-                setAddress(v);
+              onConfirm={({ address: a, lat, lng }) => {
+                setAddress(a);
+                setAddressLat(lat);
+                setAddressLng(lng);
+              }}
+              onReset={() => {
                 setAddressLat(null);
                 setAddressLng(null);
-              }}
-              onSelect={(s) => {
-                setAddress(s.display_name);
-                setAddressLat(s.lat);
-                setAddressLng(s.lon);
               }}
             />
           </div>

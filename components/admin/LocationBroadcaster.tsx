@@ -41,12 +41,20 @@ export default function LocationBroadcaster({ orderId }: { orderId: string }) {
     );
   }
 
-  function stop() {
+  async function stop() {
     if (watchId.current !== null) {
       navigator.geolocation.clearWatch(watchId.current);
       watchId.current = null;
     }
     setActive(false);
+
+    // Ștergem poziția salvată — altfel clientul ar continua să vadă
+    // ultima locație cunoscută, chiar dacă tu ai oprit transmiterea.
+    const supabase = createClient();
+    await supabase
+      .from("orders")
+      .update({ current_lat: null, current_lng: null, location_updated_at: null })
+      .eq("id", orderId);
   }
 
   useEffect(() => {

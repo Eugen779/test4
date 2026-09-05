@@ -1,28 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import Header from "@/components/Header";
+import { getOrderHistory } from "@/lib/order-history";
 
-// Harta se încarcă doar în browser (Leaflet nu funcționează pe server).
-const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), { ssr: false });
-
-type OrderData = {
-  id: string;
-  order_number: string;
-  status: string;
-  total: number;
-  delivery_slot: string | null;
-  current_lat: number | null;
-  current_lng: number | null;
-  location_updated_at: string | null;
-  delivery_lat: number | null;
-  delivery_lng: number | null;
-  created_at: string;
-};
-
-type OrderItem = { product_name: string; quantity: number; unit_price: number; subtotal: number };
+type Summary = { id: string; order_number: string; status: string; total: number; created_at: string };
 
 const statusLabels: Record<string, string> = {
   noua: "Comandă primită",
@@ -40,160 +23,74 @@ const statusColors: Record<string, string> = {
   anulata: "bg-coral/10 text-coral",
 };
 
-export default function MyOrderPage() {
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [order, setOrder] = useState<OrderData | null>(null);
-  const [items, setItems] = useState<OrderItem[]>([]);
-  const [notFound, setNotFound] = useState(false);
-  const [route, setRoute] = useState<[number, number][] | null>(null);
-  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
-  const [etaKm, setEtaKm] = useState<number | null>(null);
-  const lastRouteKey = useRef<string>("");
+export default function MyOrdersListPage() {
+  const [orders, setOrders] = useState<Summary[] | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("ocean-produs-last-order");
-      if (raw) {
-        setOrderId(JSON.parse(raw).id);
-      } else {
-        setNotFound(true);
-      }
-    } catch {
-      setNotFound(true);
+    const stored = getOrderHistory();
+    if (stored.length === 0) {
+      setOrders([]);
+      return;
     }
+
+    Promise.all(
+      stored.map(async (o) => {
+        try {
+          const res = await fetch(`/api/my-order?id=${o.id}`);
+          if (!res.ok) return null;
+          const data = await res.json();
+          return {
+            id: o.id,
+            order_number: o.order_number,
+            status: data.order.status,
+            total: data.order.total,
+            created_at: data.order.created_at,
+          } as Summary;
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => setOrders(results.filter((r): r is Summary => r !== null)));
   }, []);
-
-  useEffect(() => {
-    if (!orderId) return;
-    let cancelled = false;
-
-    async function fetchOrder() {
-      try {
-        const res = await fetch(`/api/my-order?id=${orderId}`);
-        if (!res.ok) {
-          if (!cancelled) setNotFound(true);
-          return;
-        }
-        const data = await res.json();
-        if (cancelled) return;
-        setOrder(data.order);
-        setItems(data.items);
-
-        // Recalculăm traseul doar dacă poziția livratorului chiar s-a schimbat —
-        // nu de fiecare dată, ca să nu suprasolicităm serviciul de rutare.
-        const o: OrderData = data.order;
-        if (o.status === "in_livrare" && o.current_lat != null && o.current_lng != null && o.delivery_lat != null && o.delivery_lng != null) {
-          const key = `${o.current_lat.toFixed(4)},${o.current_lng.toFixed(4)}`;
-          if (key !== lastRouteKey.current) {
-            lastRouteKey.current = key;
-            const routeRes = await fetch(
-              `/api/route-eta?oLat=${o.current_lat}&oLng=${o.current_lng}&dLat=${o.delivery_lat}&dLng=${o.delivery_lng}`
-            );
-            if (routeRes.ok) {
-              const routeData = await routeRes.json();
-              if (!cancelled && routeData.coordinates) {
-                setRoute(routeData.coordinates);
-                setEtaMinutes(Math.round(routeData.durationSeconds / 60));
-                setEtaKm(Math.round((routeData.distanceMeters / 1000) * 10) / 10);
-              }
-            }
-          }
-        }
-      } catch {
-        // conexiune momentan indisponibilă — încercăm din nou la următoarea rundă
-      }
-    }
-
-    fetchOrder();
-    const interval = setInterval(fetchOrder, 5000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [orderId]);
-
-  if (notFound) {
-    return (
-      <main className="min-h-screen bg-cream">
-        <Header />
-        <div className="px-4 pt-16 pb-16 text-center max-w-sm mx-auto">
-          <p className="text-navy/60 mb-4">Nu am găsit nicio comandă recentă pe acest telefon.</p>
-          <Link href="/produse" className="inline-block bg-coral text-cream font-display font-bold px-8 py-3 rounded-badge">
-            Vezi produsele
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  if (!order) {
-    return (
-      <main className="min-h-screen bg-cream">
-        <Header />
-        <div className="px-4 pt-16 text-center text-navy/50">Se încarcă...</div>
-      </main>
-    );
-  }
-
-  const showLiveMap = order.status === "in_livrare" && order.current_lat != null && order.current_lng != null;
 
   return (
     <main className="min-h-screen bg-cream">
       <Header />
       <div className="px-4 pt-12 pb-8 max-w-md mx-auto">
-        <h1 className="font-display font-bold text-2xl text-navy mb-1">Comanda mea</h1>
-        <p className="text-navy/50 text-sm mb-4">#{order.order_number}</p>
+        <h1 className="font-display font-bold text-2xl text-navy mb-4">Comenzile mele</h1>
 
-        <span className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full mb-5 ${statusColors[order.status]}`}>
-          {statusLabels[order.status] ?? order.status}
-        </span>
+        {orders === null && <p className="text-navy/50 text-center py-10">Se încarcă...</p>}
 
-        {showLiveMap && (
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-navy">📍 Livrarea e pe drum</p>
-              {etaMinutes !== null && (
-                <p className="text-sm font-bold text-coral">
-                  ~{etaMinutes} min {etaKm !== null && <span className="text-navy/50 font-normal">· {etaKm} km</span>}
-                </p>
-              )}
-            </div>
-            <DeliveryMap
-              driver={{ lat: order.current_lat!, lng: order.current_lng! }}
-              destination={
-                order.delivery_lat != null && order.delivery_lng != null
-                  ? { lat: order.delivery_lat, lng: order.delivery_lng }
-                  : undefined
-              }
-              route={route ?? undefined}
-            />
-            <p className="text-xs text-navy/40 mt-1">Locația se actualizează automat.</p>
+        {orders !== null && orders.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-navy/50 mb-4">Nu ai nicio comandă încă pe acest telefon.</p>
+            <Link href="/produse" className="text-coral font-semibold">
+              Vezi produsele →
+            </Link>
           </div>
         )}
 
-        {order.delivery_slot && (
-          <p className="text-sm text-navy/70 mb-3">
-            <span className="font-semibold text-navy">Interval livrare:</span> {order.delivery_slot}
-          </p>
-        )}
-
-        <div className="bg-white rounded-2xl overflow-hidden divide-y divide-kraft shadow-sm mt-4">
-          <p className="px-5 py-3 font-display font-bold text-navy">Produse comandate</p>
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <p className="font-semibold text-navy text-sm">{item.product_name}</p>
-                <p className="text-xs text-navy/50">
-                  {item.quantity} × {item.unit_price.toFixed(2)} lei
-                </p>
+        <div className="space-y-3">
+          {orders?.map((o) => (
+            <Link
+              key={o.id}
+              href={`/comanda-mea/${o.id}`}
+              className="block bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-semibold text-navy">#{o.order_number}</p>
+                <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
               </div>
-              <p className="font-display font-bold text-coral text-sm">{item.subtotal.toFixed(2)} lei</p>
-            </div>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[o.status]}`}>
+                  {statusLabels[o.status] ?? o.status}
+                </span>
+                <span className="text-xs text-navy/40">
+                  {new Date(o.created_at).toLocaleDateString("ro-RO")}
+                </span>
+              </div>
+            </Link>
           ))}
-          <div className="flex items-center justify-between px-5 py-4 bg-kraft/20">
-            <span className="font-display font-bold text-navy">Total</span>
-            <span className="font-display font-bold text-coral">{order.total.toFixed(2)} lei</span>
-          </div>
         </div>
       </div>
     </main>
