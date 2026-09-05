@@ -74,6 +74,9 @@ export type Order = {
   total: number;
   notes: string | null;
   delivery_slot: string | null;
+  current_lat: number | null;
+  current_lng: number | null;
+  location_updated_at: string | null;
   created_at: string;
 };
 

@@ -60,6 +60,7 @@ function CartLink() {
 const menuLinks = [
   { href: "/", label: "Acasă" },
   { href: "/produse", label: "Toate produsele" },
+  { href: "/comanda-mea", label: "Comanda mea" },
   { href: "/cos", label: "Coșul meu" },
 ];
 

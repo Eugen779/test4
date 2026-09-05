@@ -123,6 +123,11 @@ export default function CheckoutClient({
     }
 
     clear();
+    try {
+      localStorage.setItem("ocean-produs-last-order", JSON.stringify({ id: orderId, order_number: orderNumber }));
+    } catch {
+      // localStorage indisponibil — clientul poate oricând urmări comanda cu numărul primit.
+    }
     router.push(`/checkout/confirmare?numar=${orderNumber}`);
   }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
+import LocationBroadcaster from "@/components/admin/LocationBroadcaster";
 import type { Order, OrderItem } from "@/lib/types";
 
 export const revalidate = 0;
@@ -61,6 +62,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           {o.notes && <p><span className="font-semibold text-navy">Observații:</span> {o.notes}</p>}
         </div>
       </div>
+
+      {o.status === "in_livrare" && <LocationBroadcaster orderId={o.id} />}
 
       <div className="bg-white rounded-2xl overflow-hidden divide-y divide-kraft shadow-sm">
         <p className="px-5 py-3 font-display font-bold text-navy">Produse comandate</p>
