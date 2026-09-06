@@ -3,12 +3,14 @@ export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 export const CHISINAU_CENTER: [number, number] = [28.8638, 47.0105]; // [lng, lat]
 
 // Conturul real al zonei de livrare — Chișinău + Stăuceni, Grătiești, Hulboaca,
-// Ghidighici, Durlești, Codru. Coordonate aproximative desenate manual în jurul
-// acestor localități (nu e o graniță administrativă oficială, dar urmărește
-// forma reală, nu un dreptunghi).
+// Ghidighici, Durlești, Codru — cu Cricova exclus explicit. Coordonate
+// aproximative desenate manual (nu e o graniță administrativă oficială, dar
+// urmărește forma reală, nu un dreptunghi).
 const DELIVERY_ZONE_COORDINATES: [number, number][] = [
   [28.78, 47.125], // nord, peste Hulboaca
-  [28.9, 47.165], // spre Ghidighici
+  [28.8, 47.112], // coboară — exclude Cricova
+  [28.9, 47.115], // continuă sub Cricova
+  [28.93, 47.165], // urcă spre Ghidighici
   [28.965, 47.13], // coborâre spre marginea de nord-est a orașului
   [28.965, 47.05], // Ciocana / marginea NE a orașului
   [28.965, 46.995], // marginea de est, Botanica

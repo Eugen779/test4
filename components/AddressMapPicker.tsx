@@ -181,7 +181,7 @@ export default function AddressMapPicker({
 
       <div ref={mapDivRef} className="w-full h-56 rounded-xl overflow-hidden border border-kraftDark/30" />
       <p className="text-xs text-navy/40 mt-1">
-        Zona portocalie punctată arată aria de livrare (Chișinău, Stăuceni, Grătiești, Hulboaca, Ghidighici, Durlești, Codru).
+        Zona portocalie punctată arată aria de livrare (Chișinău, Stăuceni, Grătiești, Hulboaca, Ghidighici, Durlești, Codru — fără Cricova).
       </p>
 
       {outOfArea && (
