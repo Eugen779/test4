@@ -33,6 +33,7 @@ export default function CourierRouteMap({
       center: [origin.lng, origin.lat],
       zoom: 12,
     });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
       map.addSource(ROUTE_SOURCE_ID, {
@@ -44,7 +45,7 @@ export default function CourierRouteMap({
         type: "line",
         source: ROUTE_SOURCE_ID,
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": "#C8342E", "line-width": 4, "line-opacity": 0.85 },
+        paint: { "line-color": "#C8342E", "line-width": 5, "line-opacity": 0.85 },
       });
       setReady(true);
     });
@@ -57,12 +58,41 @@ export default function CourierRouteMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function drawMarkers(orderedStops: (Stop & { position: number })[] | null) {
+    const map = mapRef.current;
+    if (!map) return;
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    const originEl = document.createElement("div");
+    originEl.style.fontSize = "26px";
+    originEl.textContent = "🚗";
+    markersRef.current.push(new mapboxgl.Marker({ element: originEl }).setLngLat([origin.lng, origin.lat]).addTo(map));
+
+    const list = orderedStops ?? stops.map((s, i) => ({ ...s, position: i + 1 }));
+    list.forEach((s) => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "background:#C8342E;color:#FBF6EC;width:28px;height:28px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35)";
+      el.textContent = String(s.position);
+      markersRef.current.push(new mapboxgl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(map));
+    });
+
+    const bounds = new mapboxgl.LngLatBounds();
+    bounds.extend([origin.lng, origin.lat]);
+    stops.forEach((s) => bounds.extend([s.lng, s.lat]));
+    map.fitBounds(bounds, { padding: 70, maxZoom: 15 });
+  }
+
   useEffect(() => {
     if (!ready || !mapRef.current || stops.length === 0) return;
     const map = mapRef.current;
 
-    // Curier (start) + toate opririle — cerem Mapbox să găsească cea mai
-    // bună ordine de vizitare (nu neapărat ordinea în care au fost preluate).
+    // Arătăm imediat marcajele simple (neordonate), ca harta să nu rămână
+    // niciodată goală — apoi le înlocuim cu ordinea optimizată, dacă reușește.
+    drawMarkers(null);
+
     const coords = [`${origin.lng},${origin.lat}`, ...stops.map((s) => `${s.lng},${s.lat}`)].join(";");
 
     fetch(
@@ -77,43 +107,22 @@ export default function CourierRouteMap({
         const source = map.getSource(ROUTE_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
         source?.setData({ type: "Feature", properties: {}, geometry: trip.geometry });
 
-        // waypoints[0] e mereu punctul de start (curierul) — restul, în ordinea
-        // introdusă de noi, ne spun poziția lor optimă în traseu (waypoint_index).
         const orderedStops = stops
-          .map((stop, i) => ({ ...stop, position: waypoints[i + 1].waypoint_index }))
+          .map((stop, i) => ({ ...stop, position: waypoints[i + 1].waypoint_index + 1 }))
           .sort((a, b) => a.position - b.position);
 
+        drawMarkers(orderedStops);
         if (onOptimized) onOptimized(orderedStops, Math.round(trip.duration / 60));
-
-        // marcaje numerotate, în ordinea optimă
-        markersRef.current.forEach((m) => m.remove());
-        markersRef.current = [];
-
-        const originEl = document.createElement("div");
-        originEl.innerHTML = '<div style="font-size:24px">🚗</div>';
-        markersRef.current.push(new mapboxgl.Marker({ element: originEl }).setLngLat([origin.lng, origin.lat]).addTo(map));
-
-        orderedStops.forEach((s, i) => {
-          const el = document.createElement("div");
-          el.style.cssText =
-            "background:#C8342E;color:#FBF6EC;width:26px;height:26px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)";
-          el.textContent = String(i + 1);
-          markersRef.current.push(new mapboxgl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(map));
-        });
-
-        const bounds = new mapboxgl.LngLatBounds();
-        bounds.extend([origin.lng, origin.lat]);
-        stops.forEach((s) => bounds.extend([s.lng, s.lat]));
-        map.fitBounds(bounds, { padding: 60 });
       })
       .catch(() => {
-        // traseul nu s-a putut optimiza — curierul poate livra oricum, în ordinea din listă
+        // traseul optimizat nu s-a putut calcula — rămân marcajele simple, deja afișate
       });
-  }, [ready, origin.lat, origin.lng, stops]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, origin.lat, origin.lng, JSON.stringify(stops.map((s) => s.orderId))]);
 
   if (!MAPBOX_TOKEN) {
     return <p className="text-coral text-sm">Harta nu este configurată (lipsește cheia Mapbox).</p>;
   }
 
-  return <div ref={mapDivRef} className="w-full h-72 rounded-2xl overflow-hidden border border-kraftDark/30 shadow-sm" />;
+  return <div ref={mapDivRef} className="w-full h-full" />;
 }

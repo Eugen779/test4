@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 const CourierRouteMap = dynamic(() => import("@/components/CourierRouteMap"), { ssr: false });
 
@@ -30,12 +31,12 @@ export default function CourierPage() {
   const [mine, setMine] = useState<OrderRow[]>([]);
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [tracking, setTracking] = useState(false);
+  const [sheetExpanded, setSheetExpanded] = useState(true);
   const [routeInfo, setRouteInfo] = useState<{ position: number; label: string }[]>([]);
   const [totalMinutes, setTotalMinutes] = useState<number | null>(null);
   const watchId = useRef<number | null>(null);
   const lastSent = useRef(0);
 
-  // Reia sesiunea curierului (nume + PIN) salvată pe telefon.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -68,7 +69,6 @@ export default function CourierPage() {
     setCourier(null);
   }
 
-  // Reîncarcă lista de comenzi la fiecare 10 secunde.
   useEffect(() => {
     if (!courier) return;
     let cancelled = false;
@@ -92,6 +92,15 @@ export default function CourierPage() {
       clearInterval(interval);
     };
   }, [courier]);
+
+  // O poziție inițială, o singură dată — ca harta să aibă imediat ce arăta,
+  // chiar înainte de a porni transmiterea live către clienți.
+  useEffect(() => {
+    if (!courier || position || !("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    });
+  }, [courier, position]);
 
   async function claimOrder(orderId: string) {
     if (!courier) return;
@@ -185,107 +194,128 @@ export default function CourierPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream pb-10">
-      <header className="sticky top-0 z-10 bg-navy text-cream px-4 py-3 flex items-center justify-between">
+    <main className="fixed inset-0 bg-cream">
+      {/* Harta ocupă tot ecranul, în spate */}
+      <div className="absolute inset-0">
+        {position && stopsWithCoords.length > 0 ? (
+          <CourierRouteMap
+            origin={position}
+            stops={stopsWithCoords.map((o) => ({
+              orderId: o.id,
+              lat: o.delivery_lat!,
+              lng: o.delivery_lng!,
+              label: o.customer_address,
+            }))}
+            onOptimized={(ordered, minutes) => {
+              setRouteInfo(ordered.map((s) => ({ position: s.position, label: s.label })));
+              setTotalMinutes(minutes);
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-kraft/30 px-8 text-center">
+            <p className="text-navy/50 text-sm">
+              {!position ? "Se caută locația ta..." : "Preia o comandă ca să vezi traseul pe hartă."}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Bară de sus, peste hartă */}
+      <div className="absolute top-0 left-0 right-0 bg-navy/95 backdrop-blur text-cream px-4 py-3 flex items-center justify-between z-10">
         <div>
-          <p className="font-display font-bold">Bună, {courier.name}</p>
-          <p className="text-cream/60 text-xs">Panou curier</p>
+          <p className="font-display font-bold text-sm">Bună, {courier.name}</p>
+          {totalMinutes !== null && stopsWithCoords.length > 0 && (
+            <p className="text-cream/70 text-xs">Traseu optimizat — ~{totalMinutes} min</p>
+          )}
         </div>
-        <button onClick={logout} className="text-cream/70 text-sm">
-          Ieși
+        <div className="flex items-center gap-4">
+          {!tracking ? (
+            <button onClick={startTracking} className="text-coral text-sm font-semibold">
+              Pornește
+            </button>
+          ) : (
+            <button onClick={stopTracking} className="text-cream/80 text-sm font-semibold">
+              Oprește
+            </button>
+          )}
+          <button onClick={logout} className="text-cream/60 text-sm">
+            Ieși
+          </button>
+        </div>
+      </div>
+
+      {/* Panou jos, cu comenzile — alunecă peste hartă */}
+      <div
+        className={`absolute left-0 right-0 bottom-0 bg-cream rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-10 transition-all duration-300 ${
+          sheetExpanded ? "max-h-[65vh]" : "max-h-[64px]"
+        } overflow-hidden flex flex-col`}
+      >
+        <button
+          onClick={() => setSheetExpanded((v) => !v)}
+          className="flex items-center justify-between px-5 py-4 shrink-0"
+        >
+          <span className="font-display font-bold text-navy">
+            {mine.length} active · {available.length} disponibile
+          </span>
+          {sheetExpanded ? <ChevronDown size={20} className="text-navy/50" /> : <ChevronUp size={20} className="text-navy/50" />}
         </button>
-      </header>
 
-      <div className="px-4 pt-5 max-w-md mx-auto">
-        {mine.length > 0 && (
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display font-bold text-navy">Comenzile mele active ({mine.length})</h2>
-              {!tracking ? (
-                <button onClick={startTracking} className="text-coral text-sm font-semibold">
-                  Pornește navigarea
-                </button>
-              ) : (
-                <button onClick={stopTracking} className="text-navy text-sm font-semibold">
-                  Oprește
-                </button>
-              )}
-            </div>
-
-            {tracking && position && stopsWithCoords.length > 0 && (
-              <div className="mb-3">
-                <CourierRouteMap
-                  origin={position}
-                  stops={stopsWithCoords.map((o) => ({
-                    orderId: o.id,
-                    lat: o.delivery_lat!,
-                    lng: o.delivery_lng!,
-                    label: o.customer_address,
-                  }))}
-                  onOptimized={(ordered, minutes) => {
-                    setRouteInfo(ordered.map((s, i) => ({ position: i + 1, label: s.label })));
-                    setTotalMinutes(minutes);
-                  }}
-                />
-                {totalMinutes !== null && (
-                  <p className="text-sm text-navy/70 mt-2">
-                    Traseu optimizat — <span className="font-bold text-coral">~{totalMinutes} min</span> pentru toate opririle.
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {mine.map((o) => {
-                const stopNumber = routeInfo.find((r) => r.label === o.customer_address)?.position;
-                return (
-                  <div key={o.id} className="bg-white rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-navy">
-                        {stopNumber && <span className="text-coral">#{stopNumber} </span>}
-                        {o.customer_name}
-                      </p>
-                      <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
+        <div className="overflow-y-auto px-4 pb-6">
+          {mine.length > 0 && (
+            <section className="mb-5">
+              <h2 className="font-display font-bold text-navy text-sm mb-2">Comenzile mele</h2>
+              <div className="space-y-3">
+                {mine.map((o) => {
+                  const stopNumber = routeInfo.find((r) => r.label === o.customer_address)?.position;
+                  return (
+                    <div key={o.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-semibold text-navy">
+                          {stopNumber && <span className="text-coral">#{stopNumber} </span>}
+                          {o.customer_name}
+                        </p>
+                        <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
+                      </div>
+                      <p className="text-sm text-navy/70">{o.customer_phone}</p>
+                      <p className="text-sm text-navy/50 mb-2">{o.customer_address}</p>
+                      {o.delivery_slot && <p className="text-xs text-navy/40 mb-2">{o.delivery_slot}</p>}
+                      <button
+                        onClick={() => markDelivered(o.id)}
+                        className="w-full bg-seafoam/20 text-seafoam font-semibold text-sm py-2 rounded-lg"
+                      >
+                        ✓ Marchează livrată
+                      </button>
                     </div>
-                    <p className="text-sm text-navy/70">{o.customer_phone}</p>
-                    <p className="text-sm text-navy/50 mb-2">{o.customer_address}</p>
-                    {o.delivery_slot && <p className="text-xs text-navy/40 mb-2">{o.delivery_slot}</p>}
-                    <button
-                      onClick={() => markDelivered(o.id)}
-                      className="w-full bg-seafoam/20 text-seafoam font-semibold text-sm py-2 rounded-lg"
-                    >
-                      ✓ Marchează livrată
-                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <h2 className="font-display font-bold text-navy text-sm mb-2">Comenzi disponibile</h2>
+            {available.length === 0 && <p className="text-navy/50 text-sm">Nicio comandă de preluat momentan.</p>}
+            <div className="space-y-3">
+              {available.map((o) => (
+                <div key={o.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold text-navy">#{o.order_number}</p>
+                    <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
                   </div>
-                );
-              })}
+                  <p className="text-sm text-navy/70">{o.customer_name} · {o.customer_phone}</p>
+                  <p className="text-sm text-navy/50 mb-2">{o.customer_address}</p>
+                  {o.delivery_slot && <p className="text-xs text-navy/40 mb-2">{o.delivery_slot}</p>}
+                  <button
+                    onClick={() => claimOrder(o.id)}
+                    className="w-full bg-coral hover:bg-coralDark text-cream font-semibold text-sm py-2 rounded-lg"
+                  >
+                    Preiau comanda
+                  </button>
+                </div>
+              ))}
             </div>
           </section>
-        )}
-
-        <section>
-          <h2 className="font-display font-bold text-navy mb-3">Comenzi disponibile ({available.length})</h2>
-          {available.length === 0 && <p className="text-navy/50 text-sm">Nicio comandă de preluat momentan.</p>}
-          <div className="space-y-3">
-            {available.map((o) => (
-              <div key={o.id} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-navy">#{o.order_number}</p>
-                  <p className="font-display font-bold text-coral">{o.total.toFixed(2)} lei</p>
-                </div>
-                <p className="text-sm text-navy/70">{o.customer_name} · {o.customer_phone}</p>
-                <p className="text-sm text-navy/50 mb-2">{o.customer_address}</p>
-                {o.delivery_slot && <p className="text-xs text-navy/40 mb-2">{o.delivery_slot}</p>}
-                <button
-                  onClick={() => claimOrder(o.id)}
-                  className="w-full bg-coral hover:bg-coralDark text-cream font-semibold text-sm py-2 rounded-lg"
-                >
-                  Preiau comanda
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   );
