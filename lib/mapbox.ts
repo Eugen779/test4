@@ -16,13 +16,39 @@ type MapboxFeature = {
   context?: { id: string; text: string }[];
 };
 
-// Construiește o adresă scurtă (stradă + număr + oraș) dintr-un rezultat
-// Mapbox, nu textul lung/complet cu regiune, cod poștal, țară etc.
+// Construiește o adresă scurtă (stradă + număr + oraș/suburbie) dintr-un
+// rezultat Mapbox — preferăm "locality" (ex. Durlești, Grătiești) în locul
+// lui "place" (Chișinău), ca suburbiile să apară cu numele lor real.
 export function formatShortAddress(feature: MapboxFeature): string {
   const street = feature.text;
   const number = feature.address;
-  const city = feature.context?.find((c) => c.id.startsWith("place."))?.text ?? "Chișinău";
+  const city =
+    feature.context?.find((c) => c.id.startsWith("locality."))?.text ??
+    feature.context?.find((c) => c.id.startsWith("place."))?.text ??
+    "Chișinău";
 
   const streetPart = number ? `${street} ${number}` : street;
   return streetPart ? `${streetPart}, ${city}` : city;
+}
+
+// Poligon dreptunghiular din limitele de livrare — folosit ca să desenăm
+// zona pe hartă, exact ce se și verifică la validarea adresei.
+export function bboxToPolygon(bbox: [number, number, number, number]) {
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  return {
+    type: "Feature" as const,
+    properties: {},
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [minLng, minLat],
+          [maxLng, minLat],
+          [maxLng, maxLat],
+          [minLng, maxLat],
+          [minLng, minLat],
+        ],
+      ],
+    },
+  };
 }

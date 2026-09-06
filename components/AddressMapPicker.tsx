@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MAPBOX_TOKEN, CHISINAU_BBOX, CHISINAU_CENTER, isWithinChisinau, formatShortAddress } from "@/lib/mapbox";
+import { MAPBOX_TOKEN, CHISINAU_BBOX, CHISINAU_CENTER, isWithinChisinau, formatShortAddress, bboxToPolygon } from "@/lib/mapbox";
 
 export default function AddressMapPicker({
   address,
@@ -42,6 +42,22 @@ export default function AddressMapPicker({
       zoom: 11,
     });
     mapRef.current = map;
+
+    map.on("load", () => {
+      map.addSource("delivery-zone", { type: "geojson", data: bboxToPolygon(CHISINAU_BBOX) });
+      map.addLayer({
+        id: "delivery-zone-fill",
+        type: "fill",
+        source: "delivery-zone",
+        paint: { "fill-color": "#7FA69A", "fill-opacity": 0.12 },
+      });
+      map.addLayer({
+        id: "delivery-zone-line",
+        type: "line",
+        source: "delivery-zone",
+        paint: { "line-color": "#7FA69A", "line-width": 2, "line-dasharray": [2, 2] },
+      });
+    });
 
     map.on("click", (e) => {
       placeMarkerAndReverseGeocode(e.lngLat.lat, e.lngLat.lng);
@@ -164,6 +180,7 @@ export default function AddressMapPicker({
       </div>
 
       <div ref={mapDivRef} className="w-full h-56 rounded-xl overflow-hidden border border-kraftDark/30" />
+      <p className="text-xs text-navy/40 mt-1">Zona verde punctată arată aria de livrare (Chișinău și suburbii).</p>
 
       {outOfArea && (
         <p className="text-xs text-coral mt-1">Livrăm doar în Chișinău și suburbii — alege un punct din această zonă.</p>
