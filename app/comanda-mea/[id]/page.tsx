@@ -6,7 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 
-const DeliveryMapGoogle = dynamic(() => import("@/components/DeliveryMapGoogle"), { ssr: false });
+const DeliveryMapMapbox = dynamic(() => import("@/components/DeliveryMapMapbox"), { ssr: false });
 
 type OrderData = {
   id: string;
@@ -122,7 +122,7 @@ export default function MyOrderDetailPage() {
                 </p>
               )}
             </div>
-            <DeliveryMapGoogle
+            <DeliveryMapMapbox
               driver={{ lat: order.current_lat!, lng: order.current_lng! }}
               destination={
                 order.delivery_lat != null && order.delivery_lng != null
