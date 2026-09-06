@@ -50,6 +50,7 @@ export type Settings = {
   address: string | null;
   min_order_enabled: boolean;
   min_order_amount: number;
+  courier_pin: string;
 };
 
 export type DeliverySlot = {
@@ -79,6 +80,7 @@ export type Order = {
   location_updated_at: string | null;
   delivery_lat: number | null;
   delivery_lng: number | null;
+  courier_name: string | null;
   created_at: string;
 };
 

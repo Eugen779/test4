@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_2, Inter, Caveat } from "next/font/google";
 import { CartProvider } from "@/lib/cart-context";
 import "./globals.css";
@@ -22,6 +22,16 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: "Ocean Produs — Calitate superioară direct din ocean",
   description: "Icre, fructe de mare și conserve premium, livrate la ușa ta.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Ocean Produs",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#C8342E",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

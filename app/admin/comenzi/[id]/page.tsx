@@ -59,6 +59,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           {o.delivery_slot && (
             <p><span className="font-semibold text-navy">Livrare:</span> {o.delivery_slot}</p>
           )}
+          {o.courier_name && (
+            <p><span className="font-semibold text-navy">Curier:</span> {o.courier_name}</p>
+          )}
           {o.notes && <p><span className="font-semibold text-navy">Observații:</span> {o.notes}</p>}
         </div>
       </div>

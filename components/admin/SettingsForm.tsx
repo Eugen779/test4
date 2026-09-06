@@ -9,6 +9,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initial.min_order_enabled);
   const [amount, setAmount] = useState(initial.min_order_amount?.toString() ?? "250");
+  const [courierPin, setCourierPin] = useState(initial.courier_pin ?? "0000");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +24,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
       .update({
         min_order_enabled: enabled,
         min_order_amount: parseFloat(amount || "0"),
+        courier_pin: courierPin,
       })
       .eq("id", 1);
 
@@ -37,40 +39,58 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
   }
 
   return (
-    <div className="max-w-md bg-white rounded-2xl p-5 space-y-5 shadow-sm">
-      <div>
-        <h2 className="font-display font-bold text-lg text-navy mb-1">Comandă minimă</h2>
-        <p className="text-sm text-navy/60">
-          Cere clienților o valoare minimă a coșului înainte să poată finaliza comanda.
-        </p>
+    <div className="space-y-5">
+      <div className="max-w-md bg-white rounded-2xl p-5 space-y-5 shadow-sm">
+        <div>
+          <h2 className="font-display font-bold text-lg text-navy mb-1">Comandă minimă</h2>
+          <p className="text-sm text-navy/60">
+            Cere clienților o valoare minimă a coșului înainte să poată finaliza comanda.
+          </p>
+        </div>
+
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="font-semibold text-navy">Activă</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => setEnabled(!enabled)}
+            className={`relative w-12 h-7 rounded-full transition-colors ${enabled ? "bg-coral" : "bg-kraftDark"}`}
+          >
+            <span
+              className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                enabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </label>
+
+        <div>
+          <label className="block text-sm font-semibold text-navy mb-1">Sumă minimă (lei)</label>
+          <input
+            type="number"
+            step="1"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            disabled={!enabled}
+            className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none disabled:opacity-50 disabled:bg-kraft/20"
+          />
+        </div>
       </div>
 
-      <label className="flex items-center justify-between cursor-pointer">
-        <span className="font-semibold text-navy">Activă</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          onClick={() => setEnabled(!enabled)}
-          className={`relative w-12 h-7 rounded-full transition-colors ${enabled ? "bg-coral" : "bg-kraftDark"}`}
-        >
-          <span
-            className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
-              enabled ? "translate-x-5" : "translate-x-0"
-            }`}
-          />
-        </button>
-      </label>
-
-      <div>
-        <label className="block text-sm font-semibold text-navy mb-1">Sumă minimă (lei)</label>
+      <div className="max-w-md bg-white rounded-2xl p-5 space-y-3 shadow-sm">
+        <div>
+          <h2 className="font-display font-bold text-lg text-navy mb-1">Cod curieri</h2>
+          <p className="text-sm text-navy/60">
+            Curierii introduc acest cod o singură dată, pe telefonul lor, ca să intre în pagina de preluare comenzi
+            (<span className="font-mono">/curier</span>).
+          </p>
+        </div>
         <input
-          type="number"
-          step="1"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          disabled={!enabled}
-          className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none disabled:opacity-50 disabled:bg-kraft/20"
+          type="text"
+          value={courierPin}
+          onChange={(e) => setCourierPin(e.target.value)}
+          className="w-full border border-kraftDark rounded-lg px-3 py-2 focus:border-coral focus:ring-2 focus:ring-coral/20 outline-none"
         />
       </div>
 
