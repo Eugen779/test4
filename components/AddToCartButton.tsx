@@ -38,6 +38,20 @@ export default function AddToCartButton({ product }: { product: Product }) {
       },
       quantity
     );
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "AddToCart", {
+        content_name: effectiveName,
+        value: effectivePrice * quantity,
+        currency: "MDL",
+      });
+    }
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("event", "add_to_cart", {
+        currency: "MDL",
+        value: effectivePrice * quantity,
+        items: [{ item_name: effectiveName, quantity, price: effectivePrice }],
+      });
+    }
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

@@ -134,6 +134,17 @@ export default function CheckoutClient({
 
     clear();
     addOrderToHistory({ id: orderId, order_number: orderNumber });
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "Purchase", { value: grandTotal, currency: "MDL" });
+    }
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("event", "purchase", {
+        transaction_id: orderNumber,
+        currency: "MDL",
+        value: grandTotal,
+        items: items.map((item) => ({ item_name: item.name, quantity: item.quantity, price: item.price })),
+      });
+    }
     router.push(`/checkout/confirmare?numar=${orderNumber}`);
   }
 
